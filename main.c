@@ -59,8 +59,8 @@ void systemInit(void)
     
     //CONFIG INTERRUPCIONES
     GIE = 1;      // Habilitar las interrupciones globales
-    PEIE = 1;     // Habilitar las interrupciones de periféricos para el TMR1
-    TMR1IE = 1;   // Habilitar la interrupción del Timer1 para NO ME ACUERDO
+    PEIE = 1;     // Habilitar las interrupciones de perifÃ©ricos para el TMR1
+    TMR1IE = 1;   // Habilitar la interrupciÃ³n del Timer1 para NO ME ACUERDO
     TMR0IE = 1;     //Habilitacion interrupcion Timer0 para TAMPOCO ME ACUERDO
     
     
@@ -75,10 +75,10 @@ void __interrupt() isr(void)
 {
     if (TMR1IF)
     {
-        TMR1IF = 0;  // Limpiar la bandera de interrupción del Timer1
+        TMR1IF = 0;  // Limpiar la bandera de interrupciÃ³n del Timer1
         TMR1H = 0x00;
         TMR1L = 0x00;
-        ticks();     // Llamar a la función ticks()
+        ticks();     // Llamar a la funciÃ³n ticks()
     }
     
     if(TMR0IF)
@@ -90,10 +90,8 @@ void __interrupt() isr(void)
 
 void ticks(void) {
     varTicks++;  // Incrementar la variable varTicks
-    // Puedes agregar más código aquí según tus necesidades
-    
-    //RB1 = ~RB1;
-    GPIObits.GP2 = ~GPIObits.GP2;
+    // Puedes agregar mÃ¡s cÃ³digo aquÃ­ segÃºn tus necesidades
+    LED_OUT = ~LED_OUT;
     ticks100us++;
     
     if((varTicks%10) == 0)
