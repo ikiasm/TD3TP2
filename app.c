@@ -1,4 +1,4 @@
-
+ado
 #include <xc.h>
 #include "app.h"
 
@@ -13,5 +13,19 @@ void appInit()
 
 void appTask()
 {
-    static int var = 0;
+    static char estado = 0;
+
+    switch(estado)
+        {
+            case 0:
+                {
+                    break;
+                }
+            case 1:
+                {
+                    break;
+                }
+            default:
+                break;
+        }
 }
