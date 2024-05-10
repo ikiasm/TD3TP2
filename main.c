@@ -19,26 +19,27 @@
 #pragma config CP = OFF         // Code Protection bit (Program Memory code protection is disabled)
 #pragma config CPD = OFF        // Data Code Protection bit (Data memory code protection is disabled)
 
-// #pragma config statements should precede project file includes.
-// Use project enums instead of #define for ON and OFF.
+
+
 
 // Variables globales
-volatile unsigned int varTicks = 0;
+volatile  uint16_t varTicks = 0;
 
-volatile unsigned int ticks100us = 0;
-volatile unsigned int ticks1ms = 0;
-volatile unsigned int ticks10ms = 0;
+volatile  uint8_t ticks1s = 0;
+volatile  uint8_t ticks1M = 0;
+
 
 void systemInit(void);
 void ticks(void);
 
 void main(void) {
-    
+    __delay_ms(200);
     systemInit();   //INICIALIZACION DE MODULOS REQUERIDOS POR LA APP (Config de timers, interrupciones, GPIO entrda/salida)
     appInit();      //INICIALIZACION DE ESTADOS INICIALES DE SALIDAS, VALOR INICIAL TIMERS, FLAGS
-    while(true)
+    while(1)
     {
         appTask();  //APP CON LA MAQUINA DE ESTADO Y TRANSICIONES REQUERIDAS POR EL TP
+        
     }
     
     return;
@@ -47,60 +48,95 @@ void main(void) {
 
 void systemInit(void)
 {
+    //APAGADO CMP
+    CMCONbits.CM0 = 1;
+    CMCONbits.CM1 = 1;
+    CMCONbits.CM2 = 1;
+    
     //CONFIG PUERTOS
-    SERIE_TRIS = 1;     //Entrada dato serie
-    PULSADOR_TRIS = 1;  //Entrada pulsador
-    BUZZER_TRIS = 0;    //Salida para buzzer
-    LED_TRIS = 0;       //Salida para LED
+    SERIE_RX_TRIS = 1;      //RX serie
+    SERIE_TX_TRIS = 0;      //TX serie
+    PULSADOR_TRIS = 1;      //Entrada pulsador
+    BUZZER_TRIS = 0;        //Salida para buzzer
+    LED_TRIS = 0;           //Salida para LED    
     
     
-    //CONFIG TIMERS
+    //CONFIG TIMER0 para buzzer
+    OPTION_REGbits.PS0 = 1;//1;     //PS = 0x000 => 1:4
+    OPTION_REGbits.PS1 = 0;
+    OPTION_REGbits.PS2 = 0;
+    OPTION_REGbits.PSA = 0;//0;     //Prescaler asignado a TMR0
+    OPTION_REGbits.T0SE = 1;    //No importa
+    OPTION_REGbits.T0CS = 0;    //TMR0 Internal clock source
     
+    //CONFIG TIMER1 para tiempos grales
+    T1CONbits.T1CKPS0 = 1;      //Prescaler actual 1:8 anterior 1:2
+    T1CONbits.T1CKPS1 = 1;
+    T1CONbits.TMR1CS = 0;       //TMR1 Internal Clock (Fosc/4))
+    
+    //CONFIG EXT INT
+    OPTION_REGbits.INTEDG = 0;
+    INTCONbits.INTE = 1;
     
     //CONFIG INTERRUPCIONES
-    GIE = 1;      // Habilitar las interrupciones globales
-    PEIE = 1;     // Habilitar las interrupciones de periféricos para el TMR1
-    TMR1IE = 1;   // Habilitar la interrupción del Timer1 para NO ME ACUERDO
-    TMR0IE = 1;     //Habilitacion interrupcion Timer0 para TAMPOCO ME ACUERDO
-    
-    
-    //TMR1ON = 1;
+    INTCONbits.PEIE = 1;        // Interrupciones de periféricos para el TMR1
+    INTCONbits.T0IE = 1;        // Interrupcion TMR0
+    PIE1bits.TMR1IE = 1;//1;        // Interrupción del TMR1
+    INTCONbits.GIE = 1;         // Interrupciones globales
+    T1CONbits.TMR1ON = 1;
     
 }
 
-//ACA VA EL MANEJO DE INTERRUPCIONES
-//HAY QUE VER COMO LAS ESPECIFICA EL COMPILADOR XC8
-//HAY DOCUMENTACION EN LA PAGINA DE MICROCHIP SOBRE EL XC8
+
 void __interrupt() isr(void)
 {
-    if (TMR1IF)
+    
+    if(INTCONbits.T0IF)       //INT para Geenerador de frecuencia
     {
-        TMR1IF = 0;  // Limpiar la bandera de interrupción del Timer1
-        TMR1H = 0x00;
-        TMR1L = 0x00;
-        ticks();     // Llamar a la función ticks()
+        
+        buzzer();
+        TMR0 = 0xFF - valueTimer0;
+        INTCONbits.T0IF = 0;
+        
     }
     
-    if(TMR0IF)
+    if(PIR1bits.T1IF)         // INT para cuentas generales
     {
-        TMR0IF = 0;
-        //REINICIO LOS VALORES DEl TIMER0
+        
+        ticks();
+        TMR1 = valueTimer1;
+        PIR1bits.T1IF = 0;
+        
+        
     }
+    
+    if(INTCONbits.INTF)
+    {
+        
+        INTCONbits.INTF = 0;
+    }
+    
+    
+    
 }
 
 void ticks(void) {
-    varTicks++;  // Incrementar la variable varTicks
-    // Puedes agregar más código aquí según tus necesidades
-    LED_OUT = ~LED_OUT;
-    ticks100us++;
-    
-    if((varTicks%10) == 0)
+    varTicks++;  
+    tick++;
+    // Puedes agregar más código aquí según tus necesidades siempre que no sean
+    // bloqueantes
+ 
+    if((varTicks%500) == 0)
     {
         
-        ticks1ms++;
+        flag1s = true;
+        ticks1s++;
     }
-    if((varTicks%100) == 0)
+    if((varTicks%32000) == 0)
     {
-        ticks10ms++;
-    }
+        flag1M = true;
+        ticks1M++;
+        varTicks = 0;
+    }   
 }
+
