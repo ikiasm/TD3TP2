@@ -227,8 +227,3 @@ void uart_Rx(void)
     }
     
 }
-
-void uart_Rx(void)
-{
-    
-}
