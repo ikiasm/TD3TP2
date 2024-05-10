@@ -167,30 +167,65 @@ void uart_Tx(unsigned int dato)
     unsigned char datoL;
     unsigned char datoH;
 
+    INTCONbits.GIE = 0;
+    INTCONbits.T0IE = 0;        
+    PIE1bits.TMR1IE = 0;
+    T1CONbits.TMR1ON = 0;   //Apagamos el timer
+    
     datoH = dato / 0x100;
     datoL = dato - (datoH * 0x100);
     //Envio datoH
     SERIE_TX = 0;   //Start bit
-    __delay_us(104);
+    __delay_us(124);
     
     for(i=0 ; i<8 ; i++)
     {
         SERIE_TX = datoH >> i & 0x01;
-        __delay_us(104);
+        __delay_us(114);
     }
     SERIE_TX = 1;   //Stop bit
-    __delay_us(208);
+     //__delay_us(508);
     //Envio datoL
     SERIE_TX = 0;   //Start bit
-    __delay_us(104);
+    __delay_us(124);
     
     for(i=0 ; i<8 ; i++)
     {
         SERIE_TX = datoL >> i & 0x01;
-        __delay_us(104);
+        __delay_us(114);
     }
-    SERIE_TX = 1;   //Stop bit
-    __delay_us(104);
+    
+    INTCONbits.GIE = 1;
+    INTCONbits.T0IE = 1;        
+    PIE1bits.TMR1IE = 1;
+    T1CONbits.TMR1ON = 1;   //Apagamos el timer
+    
+//    SERIE_TX = 1;   //Stop bit
+//    __delay_us(204);
+}
+
+void uart_Rx(void)
+{
+    static unsigned char dato = 0;
+    static char i = 0;
+    INTCONbits.GIE = 0;
+    INTCONbits.T0IE = 0;        
+    PIE1bits.TMR1IE = 0;
+    T1CONbits.TMR1ON = 0;   //Apagamos el timer   
+    __delay_us(150);
+    for(i = 0 ; i < 8 ; i++)
+    {
+        dato = dato + SERIE_RX * (0x01 << i);
+        __delay_us(124);
+    }
+    if(!dato == 0x1B)
+    {   
+        INTCONbits.GIE = 1;
+        INTCONbits.T0IE = 1;        
+        PIE1bits.TMR1IE = 1;
+        T1CONbits.TMR1ON = 1;   //Apagamos el timer
+    }
+    
 }
 
 void uart_Rx(void)
