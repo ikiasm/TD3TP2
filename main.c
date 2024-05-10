@@ -60,6 +60,9 @@ void systemInit(void)
     BUZZER_TRIS = 0;        //Salida para buzzer
     LED_TRIS = 0;           //Salida para LED    
     
+    //CLOCK CALIBRACION
+    OSCCALbits.CAL = 0b11111100;
+    
     
     //CONFIG TIMER0 para buzzer
     OPTION_REGbits.PS0 = 1;//1;     //PS = 0x000 => 1:4
@@ -93,7 +96,7 @@ void __interrupt() isr(void)
     
     if(INTCONbits.T0IF)       //INT para Geenerador de frecuencia
     {
-        
+        //LED_OUT = !LED_OUT;
         buzzer();
         TMR0 = 0xFF - valueTimer0;
         INTCONbits.T0IF = 0;
@@ -112,7 +115,7 @@ void __interrupt() isr(void)
     
     if(INTCONbits.INTF)
     {
-        
+        uart_Rx();
         INTCONbits.INTF = 0;
     }
     
